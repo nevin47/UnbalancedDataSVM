@@ -1,6 +1,7 @@
 # coding:utf-8
 __author__ = 'nevin47'
 
+from math import log
 import collections as co
 import numpy as np
 import random
@@ -64,13 +65,14 @@ def readData(filename, scaler = 1):
     reader = csv.reader(file(filename, 'rb'))
     for line in reader:
         tempdata = np.array(line[1:-1], dtype='float64')
-        tempLabel = line[-1]
-        if(tempLabel == '1'):
+        tempLabel = np.array(line[-1], dtype='float64')
+        #tempLabel = line[-1]
+        if(tempLabel == 1):
             # 插入数据
             dataSet1.append(tempdata)
             # 插入类别标签
             labels1.append(tempLabel)
-        elif(tempLabel == '-1'):
+        elif(tempLabel == -1):
             # 插入数据
             dataSet2.append(tempdata)
             # 插入类别标签
@@ -185,6 +187,50 @@ def balanceData(dataSet1,labels1,dataSet2,labels2,randArray):
         train_label += [-1]
     return train_X,train_label
 
+def calcShannonEnt(dataSet):
+    numEntries = len(dataSet)
+    labelCounts = {}
+    for featVec in dataSet: #the the number of unique elements and their occurance
+        currentLabel = featVec[-1]
+        if currentLabel not in labelCounts.keys(): labelCounts[currentLabel] = 0
+        labelCounts[currentLabel] += 1
+    shannonEnt = 0.0
+    for key in labelCounts:
+        prob = float(labelCounts[key])/numEntries
+        shannonEnt -= prob * log(prob,2)  # log base 2
+    return shannonEnt
+
+def splitDataSet(dataSet, axis, value):
+    retDataSet = []
+    for featVec in dataSet:
+        if featVec[axis] == value:
+            reducedFeatVec = featVec[:axis]     # chop out axis used for splitting
+            reducedFeatVec.extend(featVec[axis+1:])
+            retDataSet.append(reducedFeatVec)
+    return retDataSet
+
+def chooseBestFeature(dataSet):
+    numFeatures = len(dataSet[0]) - 1      # the last column is used for the labels
+    baseEntropy = calcShannonEnt(dataSet)
+    bestInfoGain = 0.0; bestFeature = -1
+    for i in range(numFeatures):        # iterate over all the features
+        featList = [example[i] for example in dataSet]#create a list of all the examples of this feature
+        uniqueVals = set(featList)       #get a set of unique values
+        newEntropy = 0.0
+        for value in uniqueVals:
+            subDataSet = splitDataSet(dataSet, i, value)
+            prob = len(subDataSet)/float(len(dataSet))
+            newEntropy += prob * calcShannonEnt(subDataSet)
+        infoGain = baseEntropy - newEntropy     #calculate the info gain; ie reduction in entropy
+        if (infoGain > bestInfoGain):       #compare this to the best gain so far
+            bestInfoGain = infoGain         #if better than current best, set to best
+            bestFeature = i
+    return bestFeature                      #returns an integer
+
+#def dataDisperse(AllData):
+
+
+
 
 # preWork
 #设置区间化水平
@@ -197,63 +243,12 @@ randArray = [0,0,0,1,0,1,0,0,0,0,1,1,0,0,0,0,0]
 # step 1: load data
 print "step 1: load data..."
 
-dataSet1, labels1, dataSet2, labels2 = readData('/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/CreditOriginData2.csv',1)
+dataSet1, labels1, dataSet2, labels2 = readData('/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/UnbalancedDataSVM/DataSet/CreditOriginData2.csv',1)
 
-# step 2: prepare data
-print "step 2: prepare data..."
-# # 训练集即测试集
-# num1 = len(labels1)
-# num2 = len(labels2)
-# newNum1 = int(num1 * 1)
-# newNum2 = int(num2 * 1)
-#
-# train_X = dataSet1[:newNum1]
-# train_label = labels1[:newNum1]
-#
-# # 区间化补足
-# temptrain_Xx = []
-# for index , tempdata in enumerate(dataSet2[:newNum2]):
-#     t = toInterval(tempdata, randArray, method='random')
-#     temptrain_Xx.append(t)
-#
-# for tempXx in temptrain_Xx:
-#     inputa = hyperSampler(tempXx, randArray)
-#     for i in inputa:
-#         train_X = np.concatenate((train_X, np.mat(i)))
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-train_X, train_label = balanceData(dataSet1, labels1, dataSet2, labels2,randArray)
+AllData = np.vstack([dataSet1,dataSet2]) # 组合数据
+AllLabel = np.hstack([labels1,labels2]) # 组合标签
 
-# step 3: training
-print "step 3: training..."
-clf = svm.SVC(kernel='rbf', C=5.0, gamma = 1)
-clf.fit(train_X, train_label)
-
-# Crack
-tt = np.array(train_label, dtype = 'float64')
-pre= np.float64(clf.predict(train_X))
-
-# Origin
-# tt = np.array(test_label, dtype = 'float64')
-# pre= np.float64(clf.predict(test_X))
-
-# print "预测结果\n",tt - pre
-# print "实际结果\n",tt
-# print "预测结果\n",pre
-
-print testSample(pre, tt)
-
+FinalData = np.column_stack((AllData,AllLabel))
+print AllData
+print FinalData
+print chooseBestFeature(FinalData.tolist())

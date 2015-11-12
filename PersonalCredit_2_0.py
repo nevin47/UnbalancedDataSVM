@@ -1,13 +1,16 @@
 # coding:utf-8
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn import svm
+__author__ = 'nevin47'
+
 import collections as co
 import numpy as np
 import random
 import csv
 import math
+from sklearn import svm
 from sklearn import preprocessing
+
+
+## Base Function
 
 base = [str(x) for x in range(10)] + [ chr(x) for x in range(ord('A'),ord('A')+6)]
 def dec2bin(string_num):
@@ -47,10 +50,11 @@ def toInterval(originalInput, randLength, method = 'solid'):
             output.append(tempNewDemention)
     return output
 
-def readData(filename):
+def readData(filename, scaler = 1):
     '''
     按照不同类别读出数据
     :param filename: 文件名
+    :param scaler: 是否归一化
     :return: 不同类别的数据
     '''
     dataSet1 = []
@@ -60,17 +64,22 @@ def readData(filename):
     reader = csv.reader(file(filename, 'rb'))
     for line in reader:
         tempdata = np.array(line[1:-1], dtype='float64')
-        tempLabel = line[-1]
-        if(tempLabel == '1'):
-            #插入数据
+        tempLabel = np.array(line[-1], dtype='float64')
+        # tempLabel = line[-1]
+        if(tempLabel == 1):
+            # 插入数据
             dataSet1.append(tempdata)
-            #插入类别标签
+            # 插入类别标签
             labels1.append(tempLabel)
-        elif(tempLabel == '-1'):
-            #插入数据
+        elif(tempLabel == -1):
+            # 插入数据
             dataSet2.append(tempdata)
-            #插入类别标签
+            # 插入类别标签
             labels2.append(tempLabel)
+    if(scaler == 1):
+        min_max_scaler = preprocessing.MinMaxScaler()  # 设置归一化
+        dataSet1 = min_max_scaler.fit_transform(dataSet1)  # 归一化
+        dataSet2 = min_max_scaler.fit_transform(dataSet2)
     return dataSet1, labels1, dataSet2, labels2
 
 def hyperSampler(intervalSample, randLength):
@@ -114,6 +123,12 @@ def hyperSampler(intervalSample, randLength):
     return ResultFinal
 
 def testSample(pre, test):
+    '''
+    测试分类器准确度
+    :param pre: Array,预测结果
+    :param test: Array,实际分类
+    :return:Gmeans，Fmeasure
+    '''
     testCount = co.Counter(test)
     allN = testCount[1]
     allP = testCount[-1]
@@ -134,78 +149,112 @@ def testSample(pre, test):
     Fmeasure = 2 * TPR * precision / (TPR + precision)
     return Gmeans, Fmeasure
 
+def balanceData(dataSet1,labels1,dataSet2,labels2,randArray):
+    num1 = len(labels1)
+    num2 = len(labels2)
+    newNum1 = int(num1 * 1)
+    newNum2 = int(num2 * 1)
 
-#from sklearn.linear_model import SGDClassifier
+    train_X = dataSet1[:newNum1]
+    train_label = labels1[:newNum1]
 
-# we create 40 separable points
-# rng = np.random.RandomState(0)
-# n_samples_1 = 500
-# n_samples_2 = 50
-# X = np.r_[1.5 * rng.randn(n_samples_1, 2),
-#           0.5 * rng.randn(n_samples_2, 2) + [3, 3]]
-# y = [0] * (n_samples_1) + [1] * (n_samples_2)
+    # 区间化补足
+    temptrain_Xx = []
+    for index , tempdata in enumerate(dataSet2[:newNum2]):
+        t = toInterval(tempdata, randArray, method='random')
+        temptrain_Xx.append(t)
 
-X = np.load("x.npy")
-y = np.load("y.npy")
-
-
-Xnew = []
-ynew = []
-for i in range(len(y)):
-    if(y[i] == 0):
-        tx = X[i,0]
-        tx2 = X[i,1]
-        Xnew.append([tx,tx2])
-        ynew.append(y[i])
-    else:
-        rd = float(random.uniform(0,0.1))
-        rd2 = float(random.uniform(0,0.1))
-        tx1 = X[i,0] - rd
-        tx2 = X[i,0] + rd
-        tx3 = X[i,1] - rd2
-        tx4 = X[i,1] + rd2
-        Xnew.append([tx1,tx3])
-        Xnew.append([tx1,tx4])
-        Xnew.append([tx2,tx3])
-        Xnew.append([tx2,tx4])
-        ynew.append(1)
-        ynew.append(1)
-        ynew.append(1)
-        ynew.append(1)
-
-Xnew = np.array(Xnew)
-# fit the model and get the separating hyperplane
-clf = svm.SVC(kernel='linear', C=1.0)
-clf.fit(Xnew, ynew)
-
-w = clf.coef_[0]
-a = -w[0] / w[1]
-xx = np.linspace(-5, 5)
-yy = a * xx - clf.intercept_[0] / w[1]
+    for tempXx in temptrain_Xx:
+        inputa = hyperSampler(tempXx, randArray)
+        for i in inputa:
+            train_X = np.concatenate((train_X, np.mat(i)))
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+        train_label += [-1]
+    return train_X,train_label
 
 
-# get the separating hyperplane using weighted classes
-wclf = svm.SVC(kernel='linear', class_weight={1: 10})
-wclf.fit(X, y)
+# preWork
+#设置区间化水平
+randArray = [0,0,0,1,0,1,0,0,0,0,1,1,0,0,0,0,0]
 
-ww = wclf.coef_[0]
-wa = -ww[0] / ww[1]
-wyy = wa * xx - wclf.intercept_[0] / ww[1]
+## TEST AREA
 
-# plot separating hyperplanes and samples
-j =0
-h0 = plt.plot(xx, yy, 'k-', label='no weights')
-# h1 = plt.plot(xx, wyy, 'k--', label='with weights')
-for i in range(len(ynew)):
-    if(ynew[i] == 0):
-        plt.scatter(Xnew[i, 0], Xnew[i, 1], c='r')
-        j += 1
-    else:
-        plt.scatter(Xnew[i, 0], Xnew[i, 1], c='y', marker='x')
-# plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Paired)
-print '111',j
-plt.legend()
+## TEST AREA END
 
-plt.axis('tight')
-plt.show()
-print '111',j
+# step 1: load data
+print "step 1: load data..."
+
+dataSet1, labels1, dataSet2, labels2 = readData('/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/UnbalancedDataSVM/DataSet/CreditOriginData2.csv',1)
+
+# step 2: prepare data
+print "step 2: prepare data..."
+# # 训练集即测试集
+# num1 = len(labels1)
+# num2 = len(labels2)
+# newNum1 = int(num1 * 1)
+# newNum2 = int(num2 * 1)
+#
+# train_X = dataSet1[:newNum1]
+# train_label = labels1[:newNum1]
+#
+# # 区间化补足
+# temptrain_Xx = []
+# for index , tempdata in enumerate(dataSet2[:newNum2]):
+#     t = toInterval(tempdata, randArray, method='random')
+#     temptrain_Xx.append(t)
+#
+# for tempXx in temptrain_Xx:
+#     inputa = hyperSampler(tempXx, randArray)
+#     for i in inputa:
+#         train_X = np.concatenate((train_X, np.mat(i)))
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+#     train_label += [-1]
+train_X, train_label = balanceData(dataSet1, labels1, dataSet2, labels2,randArray)
+
+# step 3: training
+print "step 3: training..."
+clf = svm.SVC(kernel='rbf', C=5.0, gamma = 1)
+clf.fit(train_X, train_label)
+
+# Crack
+tt = np.array(train_label, dtype = 'float64')
+pre= np.float64(clf.predict(train_X))
+
+# Origin
+# tt = np.array(test_label, dtype = 'float64')
+# pre= np.float64(clf.predict(test_X))
+
+# print "预测结果\n",tt - pre
+# print "实际结果\n",tt
+# print "预测结果\n",pre
+
+print testSample(pre, tt)
+
