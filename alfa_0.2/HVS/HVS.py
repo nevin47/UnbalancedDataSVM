@@ -88,17 +88,13 @@ def hyperSampler(intervalSample, randLength):
     return ResultFinal
 
 def balanceData(dataSet1, labels1, dataSet2, labels2, randArray):
-    num1 = len(labels1)
-    num2 = len(labels2)
-    newNum1 = int(num1 * 1)
-    newNum2 = int(num2 * 1)
-
-    train_X = dataSet1[:newNum1]
-    train_label = labels1[:newNum1]
-
+    train_X = dataSet1[:]
+    train_label = labels1[:]
+    featureNumT = co.Counter(randArray)
+    featureNum = len(randArray) - featureNumT[0]
     # 区间化补足
     temptrain_Xx = []
-    for index, tempdata in enumerate(dataSet2[:newNum2]):
+    for index, tempdata in enumerate(dataSet2):
         t = toInterval(tempdata, randArray, method='random')
         temptrain_Xx.append(t)
 
@@ -106,20 +102,38 @@ def balanceData(dataSet1, labels1, dataSet2, labels2, randArray):
         inputa = hyperSampler(tempXx, randArray)
         for i in inputa:
             train_X = np.concatenate((train_X, np.mat(i)))
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
-        train_label += [-1]
+
+        for j in range(2 ** featureNum):
+            train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
+        # train_label += [-1]
     return train_X, train_label
+
+def balanceDataforGA(arrayValue, *data):
+    '''
+    The Balance Function for GA
+    :param arrayValue:the interval Array only with value
+    :param data:the set of data & initArray
+    :return: train_X, train_label
+    '''
+    dataSet1, labels1, dataSet2, labels2, initArray = data # unpack the data&labels
+    j = 0
+    # Set the arrayValue into the initArray
+    for index,value in enumerate(initArray):
+        if(value != 0):
+            initArray[index] = arrayValue[j]
+            j += 1
+    return balanceData(dataSet1, labels1, dataSet2, labels2, initArray)

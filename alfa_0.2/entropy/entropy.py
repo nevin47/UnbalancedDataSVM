@@ -84,7 +84,7 @@ def featureSample(dataSet1, labels1, dataSet2, labels2, MAXFEATURENUM):
     :param dataSet2:数据集2
     :param labels2:标签2
     :param MAXFEATURENUM:最大指标离散程度
-    :return:初始化区间化力度向量
+    :return:筛出的关键指标序列
     '''
     # 先计算非均衡程度
     numN = np.shape(dataSet1)[0]
@@ -109,8 +109,14 @@ def featureSample(dataSet1, labels1, dataSet2, labels2, MAXFEATURENUM):
     # 获取关键指标排序
     gainSort = np.argsort(featureGainList)
     # 生成初始化区间化力度数组
+    ## old version
     initArray = np.zeros(featureNum)
     for i in range(chosenNum):
         initArray[gainSort[i]] = 1
     return initArray
+    ## new version
+    # initArray = []
+    # for i in range(chosenNum):
+    #     initArray.append(gainSort[i])
+    # return initArray
 
