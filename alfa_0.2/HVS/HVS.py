@@ -4,15 +4,11 @@ __author__ = 'nevin47'
 import collections as co
 import numpy as np
 import random
-import csv
-import math
-from sklearn import svm
-from sklearn import preprocessing
+
 
 ## Base Function
 
 base = [str(x) for x in range(10)] + [chr(x) for x in range(ord('A'), ord('A') + 6)]
-
 
 def dec2bin(string_num):
     num = int(string_num)
@@ -22,7 +18,6 @@ def dec2bin(string_num):
         num, rem = divmod(num, 2)
         mid.append(base[rem])
     return ''.join([str(x) for x in mid[::-1]])
-
 
 def toInterval(originalInput, randLength, method='solid'):
     '''
@@ -51,40 +46,6 @@ def toInterval(originalInput, randLength, method='solid'):
                 tempNewDemention = [tempLow, tempHigh]
             output.append(tempNewDemention)
     return output
-
-
-def readData(filename, scaler=1):
-    '''
-    按照不同类别读出数据
-    :param filename: 文件名
-    :param scaler: 是否归一化
-    :return: 不同类别的数据
-    '''
-    dataSet1 = []
-    labels1 = []
-    dataSet2 = []
-    labels2 = []
-    reader = csv.reader(file(filename, 'rb'))
-    for line in reader:
-        tempdata = np.array(line[1:-1], dtype='float64')
-        tempLabel = np.array(line[-1], dtype='float64')
-        # tempLabel = line[-1]
-        if (tempLabel == 1):
-            # 插入数据
-            dataSet1.append(tempdata)
-            # 插入类别标签
-            labels1.append(tempLabel)
-        elif (tempLabel == -1):
-            # 插入数据
-            dataSet2.append(tempdata)
-            # 插入类别标签
-            labels2.append(tempLabel)
-    if (scaler == 1):
-        min_max_scaler = preprocessing.MinMaxScaler()  # 设置归一化
-        dataSet1 = min_max_scaler.fit_transform(dataSet1)  # 归一化
-        dataSet2 = min_max_scaler.fit_transform(dataSet2)
-    return dataSet1, labels1, dataSet2, labels2
-
 
 def hyperSampler(intervalSample, randLength):
     '''
@@ -126,35 +87,6 @@ def hyperSampler(intervalSample, randLength):
         ResultFinal.append(TempMiddle)
     return ResultFinal
 
-
-def testSample(pre, test):
-    '''
-    测试分类器准确度
-    :param pre: Array,预测结果
-    :param test: Array,实际分类
-    :return:Gmeans，Fmeasure
-    '''
-    testCount = co.Counter(test)
-    allN = testCount[1]
-    allP = testCount[-1]
-    testResult = test - pre
-    FN = 0
-    FP = 0
-    for index, num in enumerate(testResult):
-        if (num == 2):
-            FN += 1
-        elif (num == -2):
-            FP += 1
-    TP = allP - FP
-    TN = allN - FN
-    TPR = float(TP) / (TP + FN)
-    TNR = float(TN) / (TN + FP)
-    precision = float(TP) / (TP + FP)
-    Gmeans = math.sqrt(TPR * TNR)
-    Fmeasure = 2 * TPR * precision / (TPR + precision)
-    return Gmeans, Fmeasure
-
-
 def balanceData(dataSet1, labels1, dataSet2, labels2, randArray):
     num1 = len(labels1)
     num2 = len(labels2)
@@ -191,76 +123,3 @@ def balanceData(dataSet1, labels1, dataSet2, labels2, randArray):
         train_label += [-1]
         train_label += [-1]
     return train_X, train_label
-
-
-# preWork
-# 设置区间化水平
-randArray = [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0]
-
-## TEST AREA
-
-## TEST AREA END
-
-# step 1: load data
-print "step 1: load data..."
-
-dataSet1, labels1, dataSet2, labels2 = readData(
-    '/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/UnbalancedDataSVM/DataSet/CreditOriginData2.csv', 1)
-
-# step 2: prepare data
-print "step 2: prepare data..."
-# # 训练集即测试集
-# num1 = len(labels1)
-# num2 = len(labels2)
-# newNum1 = int(num1 * 1)
-# newNum2 = int(num2 * 1)
-#
-# train_X = dataSet1[:newNum1]
-# train_label = labels1[:newNum1]
-#
-# # 区间化补足
-# temptrain_Xx = []
-# for index , tempdata in enumerate(dataSet2[:newNum2]):
-#     t = toInterval(tempdata, randArray, method='random')
-#     temptrain_Xx.append(t)
-#
-# for tempXx in temptrain_Xx:
-#     inputa = hyperSampler(tempXx, randArray)
-#     for i in inputa:
-#         train_X = np.concatenate((train_X, np.mat(i)))
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-#     train_label += [-1]
-train_X, train_label = balanceData(dataSet1, labels1, dataSet2, labels2, randArray)
-
-# step 3: training
-print "step 3: training..."
-clf = svm.SVC(kernel='rbf', C=5.0, gamma=1)
-clf.fit(train_X, train_label)
-
-# Crack
-tt = np.array(train_label, dtype="float64")
-pre = np.float64(clf.predict(train_X))
-
-# Origin
-# tt = np.array(test_label, dtype = 'float64')
-# pre= np.float64(clf.predict(test_X))
-
-# print "预测结果\n",tt - pre
-# print "实际结果\n",tt
-# print "预测结果\n",pre
-
-print testSample(pre, tt)
