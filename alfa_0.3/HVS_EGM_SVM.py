@@ -54,7 +54,7 @@ def main(filename, scaler, MAXFEATURENUM, **svmParameter):
     # print "\tstep2.2: 平衡数据"
     # Todo:此处可以直接调用遗传算法模块了 -- By nevin47
     data = (dataSet1, labels1, dataSet2, labels2, initArray)
-    arrayValue = [0.6,0.5,0.4,0.3,0.2,0.1,1]
+    arrayValue = [0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1]
     train_X, train_label = Hyper.balanceDataforGA(arrayValue,*data)
 
     # print "step 3: 训练..."
