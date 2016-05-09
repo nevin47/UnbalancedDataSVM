@@ -62,23 +62,21 @@ def main(filename, scaler, MAXFEATURENUM, **svmParameter):
 
     # print "step 4: 测试..."
     pre = HSVM.testSVM(preTestX , clf)
-    #proba = HSVM.testSVMwithProb(preTestX, clf)
+    proba = HSVM.testSVMwithProb(preTestX, clf)
     tt = np.array(preLabels, dtype="float64")
 
 
-    # print "Final G-means:",basef.testSample(pre, tt)
-    #print "\nPRO:",proba,"\n"
+    print "Final G-means:",basef.testSample(pre, tt)
+    print "\nPRO:",proba,"\n"
     print "\nPRE:",pre,"\n"
     print basef.testSampleShow(pre, tt)
     return basef.testSampleShow(pre, tt)
 
 if __name__ == "__main__":
     # demo
-    filename1 = '/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/UnbalancedDataSVM/DataSet/test/wpbc.csv' # 设置读取文件
     filename = '/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/UnbalancedDataSVM/DataSet/CreditOriginData2.csv'
-    # filename = '/Users/nevin47/Desktop/Project/Academic/Code/Python/SVM/UnbalancedDataSVM/DataSet/Heart2.csv'
-    scaler = 1 # 决定是否归一化数据
-    MAXFEATURENUM = 5 # 设置指标离散最大值
+    scaler = 1  # 决定是否归一化数据
+    MAXFEATURENUM = 5  # 设置指标离散最大值
     SUMG = []
     SUMF = []
     for i in range(30):
@@ -86,7 +84,3 @@ if __name__ == "__main__":
         SUMG.append(tempG)
         SUMF.append(tempF)
     print "AVG-G: %f,AVG-F %f",sum(SUMG)/30.0,sum(SUMF)/30.0
-
-# test
-
-# print dataSet1
